@@ -125,13 +125,6 @@ app.post('/withdraw',
       const raw = fs.readFileSync('db.json', 'utf8')
       const db : dbSchema = JSON.parse(raw)
       const user = db.users.find(user => user.username === username)
-      if (user) {
-        res.status(200).json({
-          "message": "Withdraw successfully",
-          "balance": 2
-        })
-        return
-      }
     }
     catch (e) {
       //response in case of invalid token
