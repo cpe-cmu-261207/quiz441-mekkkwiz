@@ -126,9 +126,10 @@ app.post('/withdraw',
       const db : dbSchema = JSON.parse(raw)
       const user = db.users.find(user => user.username === username)
       if (user) {
+        if(user.balance-)
         res.status(200).json({
           "message": "Withdraw successfully",
-          "balance": 2
+          "balance": 
         })
         return
       }
