@@ -4,34 +4,83 @@ import cors from 'cors'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import { body, query, validationResult } from 'express-validator'
+import fs from 'fs'
 
 const app = express()
 app.use(bodyParser.json())
 app.use(cors())
 
+
 const PORT = process.env.PORT || 3000
 const SECRET = "SIMPLE_SECRET"
+
+interface dbSchema {
+  users : User[]
+}
+
+interface User {
+  username: string;
+  password: string;
+  firstname: string;
+  lastname: string;
+  balance: number;
+}
 
 interface JWTPayload {
   username: string;
   password: string;
+  firstname: string;
+  lastname: string;
+  balance: number;
 }
+
+app.get('/',(req,res)=>{
+  res.json('HELLO')
+});
+
 
 app.post('/login',
   (req, res) => {
-
-    const { username, password } = req.body
+    const { username, password} = req.body
+    const raw = fs.readFileSync('db.json', 'utf8')
+    const db : dbSchema = JSON.parse(raw)
     // Use username and password to create token.
-
-    return res.status(200).json({
-      message: 'Login succesfully',
-    })
+    const user = db.users.find(user => user.username === username)
+    if (!user) {
+      res.status(400).json({"message": "Invalid username or password"
+      })
+      return
+    }
+    if (user?.password !== password) {
+      res.status(400).json({"message": "Invalid username or password"
+      })
+      return
+    }
+    return res.status(200).json({"message": 'Login succesfully',  })
   })
 
-app.post('/register',
+app.post('/register', 
   (req, res) => {
-
     const { username, password, firstname, lastname, balance } = req.body
+    const raw = fs.readFileSync('db.json', 'utf8')
+    const db : dbSchema = JSON.parse(raw)
+    const user = db.users.find(user => user.username === username)
+    if (user) {
+      res.status(400).json({"message": "Username is already in used"
+      })
+      return
+    }
+    else {
+      db.users.push({
+        username, 
+        password, 
+        firstname, 
+        lastname, 
+        balance 
+      })
+      fs.writeFileSync('db.json', JSON.stringify(db))
+      res.status(200).json({"message": "Register successfully"})
+    }
   })
 
 app.get('/balance',
