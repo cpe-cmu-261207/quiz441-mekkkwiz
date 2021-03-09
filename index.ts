@@ -56,7 +56,8 @@ app.post('/login',
       })
       return
     }
-    return res.status(200).json({"message": 'Login succesfully',  })
+    const token = jwt.sign({username: username, password: password},'SIMPLE_SECRET')
+    return res.status(200).json({"message": 'Login succesfully',"token": token})
   })
 
 app.post('/register', 
@@ -88,37 +89,77 @@ app.get('/balance',
     const token = req.query.token as string
     try {
       const { username } = jwt.verify(token, SECRET) as JWTPayload
-  
+      const raw = fs.readFileSync('db.json', 'utf8')
+      const db : dbSchema = JSON.parse(raw)
+      const user = db.users.find(user => user.username === username)
+      if (user) {
+        res.status(200).json({
+          "name": username,
+          "balance": user.balance
+        })
+        return
+      }
     }
     catch (e) {
       //response in case of invalid token
+      res.status(401).json({
+        "message": "Invalid token"
+      })
     }
   })
 
 app.post('/deposit',
   body('amount').isInt({ min: 1 }),
   (req, res) => {
-
     //Is amount <= 0 ?
     if (!validationResult(req).isEmpty())
       return res.status(400).json({ message: "Invalid data" })
+
   })
 
 app.post('/withdraw',
   (req, res) => {
+    const token = req.query.token as string
+    try {
+      const { username } = jwt.verify(token, SECRET) as JWTPayload
+      const raw = fs.readFileSync('db.json', 'utf8')
+      const db : dbSchema = JSON.parse(raw)
+      const user = db.users.find(user => user.username === username)
+      if (user) {
+        res.status(200).json({
+          "message": "Withdraw successfully",
+          "balance": 2
+        })
+        return
+      }
+    }
+    catch (e) {
+      //response in case of invalid token
+      res.status(401).json({
+        "message": "Invalid token"
+      })
+    }
   })
 
 app.delete('/reset', (req, res) => {
 
   //code your database reset here
+  const raw = fs.readFileSync('db_blank.json', 'utf8')
+  const db : dbSchema = JSON.parse(raw)
+  fs.writeFileSync('db.json', JSON.stringify(db))
   
   return res.status(200).json({
-    message: 'Reset database successfully'
+    "message": 'Reset database successfully'
   })
 })
 
 app.get('/me', (req, res) => {
-  
+  res.status(200).json({
+    "firstname": "Wisarut",
+    "lastname" : "Tipbung",
+    "code" : 620610807,
+    "gpa" : 4.00
+  })
 })
 
 app.get('/demo', (req, res) => {
